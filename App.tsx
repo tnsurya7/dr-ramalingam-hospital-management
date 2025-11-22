@@ -5,7 +5,7 @@ import LoginPage from './components/LoginPage';
 import PatientListPage from './components/PatientListPage';
 import PatientDetailPage from './components/PatientDetailPage';
 import SuccessPopup from './components/SuccessPopup';
-import { patientAPI } from './services/patientAPI'; // ✅ FIXED IMPORT
+import { patientAPI } from './services/patientAPI'; // ✅ Correct API import
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(() => {
