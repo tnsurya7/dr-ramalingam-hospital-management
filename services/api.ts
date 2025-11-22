@@ -1,7 +1,7 @@
 import { Patient } from '../types';
 
-// Backend now runs on port 5001
-const API_BASE_URL = 'http://localhost:5001/api';
+// ✅ Uses environment variable (works for Vercel + Render + Local)
+const API_BASE_URL = import.meta.env.VITE_API_BASE;
 
 export const patientAPI = {
   // Get all patients
@@ -58,7 +58,7 @@ export const patientAPI = {
     }
   },
 
-  // Health check (still required)
+  // Health check
   healthCheck: async (): Promise<any> => {
     const response = await fetch(`${API_BASE_URL}/health`);
     if (!response.ok) {

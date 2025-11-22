@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Page, Patient } from './types';
 import HomePage from './components/HomePage';
@@ -6,24 +5,26 @@ import LoginPage from './components/LoginPage';
 import PatientListPage from './components/PatientListPage';
 import PatientDetailPage from './components/PatientDetailPage';
 import SuccessPopup from './components/SuccessPopup';
-import { patientAPI } from './services/api';
+import { patientAPI } from './services/patientAPI'; // ✅ FIXED IMPORT
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(() => {
     const savedPage = localStorage.getItem('currentPage');
     return savedPage ? parseInt(savedPage) : Page.Home;
   });
+
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     const savedLoginState = localStorage.getItem('isLoggedIn');
     return savedLoginState === 'true';
   });
+
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Load patients from backend on component mount
+  // ✅ Load patients from backend
   useEffect(() => {
     loadPatients();
   }, []);
@@ -33,16 +34,9 @@ const App: React.FC = () => {
       setLoading(true);
       const patientsData = await patientAPI.getAllPatients();
       setPatients(patientsData);
-      
-      // If no patients exist, initialize with sample data
-      if (patientsData.length === 0) {
-        await patientAPI.initializeData();
-        const newPatientsData = await patientAPI.getAllPatients();
-        setPatients(newPatientsData);
-      }
     } catch (error) {
       console.error('Error loading patients:', error);
-      setSuccessMessage('Error connecting to server. Using offline mode.');
+      setSuccessMessage('Error connecting to server.');
       setShowSuccess(true);
     } finally {
       setLoading(false);
@@ -134,6 +128,7 @@ const App: React.FC = () => {
             onAddPatient={handleAddPatient}
             onDeletePatient={handleDeletePatient}
             onBack={handleLogout}
+            loading={loading}
           />
         ) : (
           <HomePage onNavigateToLogin={() => navigateTo(Page.Login)} />
