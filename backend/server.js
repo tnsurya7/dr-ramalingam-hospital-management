@@ -3,20 +3,21 @@ const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
-// Create Express app
+// ✅ Create Express app
 const app = express();
 
-// ✅ Use PORT 5001 to avoid macOS ControlCenter conflict
+// ✅ Use Render assigned port OR fallback
 const PORT = process.env.PORT || 5001;
 
-// Middleware
+// ✅ Middleware
 app.use(cors());
 app.use(express.json());
 
 // ✅ Remove Mongoose strictQuery warning
 mongoose.set('strictQuery', true);
 
-// ✅ MongoDB Connectionconst MONGODB_URI =
+// ✅ MongoDB Connection
+const MONGODB_URI =
   process.env.MONGODB_URI ||
   "mongodb+srv://admin:YOUR_PASSWORD@hospital-db.4l9mmm2.mongodb.net/hospital?retryWrites=true&w=majority&appName=hospital-db";
 
