@@ -17,6 +17,10 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedPatient, setEditedPatient] = useState<Patient>(patient);
 
+  const formatDateTime = (value?: string) => {
+    return value ? new Date(value).toLocaleString() : 'N/A';
+  };
+
   const handleSave = () => {
     onUpdatePatient(editedPatient);
     setIsEditing(false);
@@ -37,7 +41,9 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
       ['Blood Group', patient.bloodGroup],
       ['Contact No', patient.contactNo],
       ['Address', patient.address],
-      ['Health Issue', patient.healthIssue]
+      ['Health Issue', patient.healthIssue],
+      ['Created On', formatDateTime(patient.createdAt)],
+      ['Updated On', formatDateTime(patient.updatedAt)]
     ];
     
     const csvContent = [
@@ -56,77 +62,54 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
   const downloadPDF = () => {
     const doc = new jsPDF();
     
-    // Title
     doc.setFontSize(18);
     doc.text('PATIENT DETAILS REPORT', 105, 20, { align: 'center' });
     
-    // Date
     doc.setFontSize(10);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 28, { align: 'center' });
     
     let yPosition = 45;
-    
-    // Patient Details
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text('Admin No:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(patient.adminNo, 70, yPosition);
-    yPosition += 10;
-    
-    doc.setFont(undefined, 'bold');
-    doc.text('Name:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(patient.name, 70, yPosition);
-    yPosition += 10;
-    
-    doc.setFont(undefined, 'bold');
-    doc.text('Age:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(patient.age.toString(), 70, yPosition);
-    yPosition += 10;
-    
-    doc.setFont(undefined, 'bold');
-    doc.text('Gender:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(patient.gender, 70, yPosition);
-    yPosition += 10;
-    
-    doc.setFont(undefined, 'bold');
-    doc.text('Blood Group:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(patient.bloodGroup, 70, yPosition);
-    yPosition += 10;
-    
-    doc.setFont(undefined, 'bold');
-    doc.text('Contact No:', 20, yPosition);
-    doc.setFont(undefined, 'normal');
-    doc.text(patient.contactNo, 70, yPosition);
-    yPosition += 15;
-    
+
+    const details = [
+      ['Admin No', patient.adminNo],
+      ['Name', patient.name],
+      ['Age', patient.age.toString()],
+      ['Gender', patient.gender],
+      ['Blood Group', patient.bloodGroup],
+      ['Contact No', patient.contactNo],
+      ['Created On', formatDateTime(patient.createdAt)],
+      ['Updated On', formatDateTime(patient.updatedAt)]
+    ];
+
+    details.forEach(([label, value]) => {
+      doc.setFont(undefined, 'bold');
+      doc.text(`${label}:`, 20, yPosition);
+      doc.setFont(undefined, 'normal');
+      doc.text(value, 70, yPosition);
+      yPosition += 10;
+    });
+
     doc.setFont(undefined, 'bold');
     doc.text('Address:', 20, yPosition);
     yPosition += 7;
     doc.setFont(undefined, 'normal');
     const addressLines = doc.splitTextToSize(patient.address, 170);
     doc.text(addressLines, 20, yPosition);
-    yPosition += (addressLines.length * 7) + 8;
-    
+    yPosition += (addressLines.length * 7) + 10;
+
     doc.setFont(undefined, 'bold');
     doc.text('Health Issue:', 20, yPosition);
     yPosition += 7;
     doc.setFont(undefined, 'normal');
     const healthLines = doc.splitTextToSize(patient.healthIssue, 170);
     doc.text(healthLines, 20, yPosition);
-    yPosition += (healthLines.length * 7) + 8;
-    
-    
+
     doc.save(`patient_${patient.adminNo}_report.pdf`);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
+
       <div className="flex justify-end items-center mb-6">
         <div className="flex space-x-3">
           {!isEditing ? (
@@ -174,11 +157,11 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
         </div>
       </div>
 
-      {/* Patient Details */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Patient Details</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Admin No</label>
             <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600">
@@ -208,6 +191,8 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
               <input
                 type="number"
                 value={editedPatient.age}
+                min={1}
+                max={120}
                 onChange={(e) => setEditedPatient({...editedPatient, age: parseInt(e.target.value)})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -231,25 +216,34 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
                 <option value="Other">Other</option>
               </select>
             ) : (
-              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+              <span className="px-3 py-2 inline-block bg-blue-100 text-blue-700 border border-blue-300 rounded-lg">
                 {patient.gender}
-              </div>
+              </span>
             )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
             {isEditing ? (
-              <input
-                type="text"
+              <select
                 value={editedPatient.bloodGroup}
                 onChange={(e) => setEditedPatient({...editedPatient, bloodGroup: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              >
+                <option value="">Select Blood Group</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+              </select>
             ) : (
-              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+              <span className="px-3 py-2 inline-block bg-red-100 text-red-700 border border-red-300 rounded-lg">
                 {patient.bloodGroup}
-              </div>
+              </span>
             )}
           </div>
 
@@ -257,9 +251,16 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">Contact No</label>
             {isEditing ? (
               <input
-                type="text"
+                type="tel"
                 value={editedPatient.contactNo}
-                onChange={(e) => setEditedPatient({...editedPatient, contactNo: e.target.value})}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  if (value.length <= 10) {
+                    setEditedPatient({ ...editedPatient, contactNo: value });
+                  }
+                }}
+                maxLength={10}
+                pattern="\d{10}"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
@@ -267,6 +268,20 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
                 {patient.contactNo}
               </div>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Created On</label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+              {formatDateTime(patient.createdAt)}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Updated On</label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+              {formatDateTime(patient.updatedAt)}
+            </div>
           </div>
 
           <div className="md:col-span-2">
@@ -304,7 +319,6 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
         </div>
       </div>
 
-      {/* Back Button */}
       <button
         onClick={onBack}
         className="fixed bottom-6 left-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors bg-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg"

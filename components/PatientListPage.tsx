@@ -3,6 +3,43 @@ import { Search, Plus, Download, FileText, ArrowLeft, Trash2 } from 'lucide-reac
 import { Patient } from '../types';
 import jsPDF from 'jspdf';
 
+// ✅ Helper functions for Smart Search
+const parseDate = (value: string) => {
+  const parts = value.split('/');
+  if (parts.length === 3) {
+    const [day, month, year] = parts.map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return null;
+};
+
+const parseDateRange = (token: string) => {
+  if (token.includes('-') && token.includes('/')) {
+    const [start, end] = token.split('-').map((t) => t.trim());
+    return {
+      start: parseDate(start),
+      end: parseDate(end),
+    };
+  }
+  return null;
+};
+
+const parseYearRange = (token: string) => {
+  if (/^\d{4}\s*-\s*\d{4}$/.test(token)) {
+    const [startYear, endYear] = token.split('-').map((t) => parseInt(t.trim()));
+    return { startYear, endYear };
+  }
+  return null;
+};
+
+const parseAgeRange = (token: string) => {
+  if (/^\d{1,3}\s*-\s*\d{1,3}$/.test(token)) {
+    const [min, max] = token.split('-').map((t) => parseInt(t.trim()));
+    return { min, max };
+  }
+  return null;
+};
+
 interface PatientListPageProps {
   patients: Patient[];
   onSelectPatient: (patient: Patient) => void;
@@ -22,6 +59,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
+
   const [newPatient, setNewPatient] = useState<Omit<Patient, 'adminNo'>>({
     name: '',
     age: 0,
@@ -32,10 +70,69 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     healthIssue: ''
   });
 
-  const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.adminNo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ✅ Smart Search with Date, Age Range, Gender Shortcut, Blood Group Partial
+  const filteredPatients = patients.filter((patient) => {
+    if (!searchTerm.trim()) return true;
+
+    const createdAtDate = patient.createdAt ? new Date(patient.createdAt) : null;
+
+    const tokens = searchTerm
+      .toLowerCase()
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    return tokens.every((token) => {
+      const ageRange = parseAgeRange(token);
+      const yearRange = parseYearRange(token);
+      const dateRange = parseDateRange(token);
+      const exactDate = parseDate(token);
+
+      const genderShortcuts =
+        (token === 'm' && patient.gender.toLowerCase() === 'male') ||
+        (token === 'f' && patient.gender.toLowerCase() === 'female') ||
+        (token === 'o' && patient.gender.toLowerCase() === 'other');
+
+      const bloodGroupMatches =
+        (token === 'o' && ['o+', 'o-'].includes(patient.bloodGroup.toLowerCase())) ||
+        (token === 'a' && ['a+', 'a-'].includes(patient.bloodGroup.toLowerCase())) ||
+        (token === 'b' && ['b+', 'b-'].includes(patient.bloodGroup.toLowerCase())) ||
+        (token === 'ab' && ['ab+', 'ab-'].includes(patient.bloodGroup.toLowerCase()));
+
+      if (ageRange) {
+        return patient.age >= ageRange.min && patient.age <= ageRange.max;
+      }
+
+      if (yearRange && createdAtDate) {
+        const year = createdAtDate.getFullYear();
+        return year >= yearRange.startYear && year <= yearRange.endYear;
+      }
+
+      if (dateRange && createdAtDate) {
+        return createdAtDate >= dateRange.start! && createdAtDate <= dateRange.end!;
+      }
+
+      if (exactDate && createdAtDate) {
+        return (
+          createdAtDate.getDate() === exactDate.getDate() &&
+          createdAtDate.getMonth() === exactDate.getMonth() &&
+          createdAtDate.getFullYear() === exactDate.getFullYear()
+        );
+      }
+
+      return (
+        patient.name.toLowerCase().includes(token) ||
+        patient.adminNo.toLowerCase().includes(token) ||
+        patient.gender.toLowerCase() === token ||
+        genderShortcuts ||
+        patient.age.toString() === token ||
+        bloodGroupMatches ||
+        patient.bloodGroup.toLowerCase() === token ||
+        patient.contactNo.includes(token) ||
+        patient.address.toLowerCase().includes(token)
+      );
+    });
+  });
 
   const handleAddPatient = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,10 +150,18 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
   };
 
   const downloadCSV = () => {
-    const headers = ['Admin No', 'Name', 'Age', 'Gender', 'Blood Group', 'Contact No'];
+    const headers = ['Admin No', 'Name', 'Age', 'Gender', 'Blood Group', 'Contact No', 'Date & Time'];
     const csvContent = [
       headers.join(','),
-      ...patients.map(p => [p.adminNo, p.name, p.age, p.gender, p.bloodGroup, p.contactNo].join(','))
+      ...patients.map(p => [
+        p.adminNo,
+        p.name,
+        p.age,
+        p.gender,
+        p.bloodGroup,
+        p.contactNo,
+        p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A'
+      ].join(','))
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -96,6 +201,9 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       yPosition += 6;
       
       doc.text(`Contact: ${patient.contactNo}`, 20, yPosition);
+      yPosition += 6;
+
+      doc.text(`Date & Time: ${patient.createdAt ? new Date(patient.createdAt).toLocaleString() : 'N/A'}`, 20, yPosition);
       yPosition += 6;
       
       doc.text(`Address: ${patient.address}`, 20, yPosition);
@@ -165,6 +273,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Blood Group</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact No</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
@@ -210,6 +319,12 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                   >
                     {patient.contactNo}
                   </td>
+                  <td 
+                    onClick={() => onSelectPatient(patient)}
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 cursor-pointer"
+                  >
+                    {patient.createdAt ? new Date(patient.createdAt).toLocaleString() : 'N/A'}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <button
                       onClick={(e) => {
@@ -225,7 +340,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                   </td>
                 </tr>
               ))}
-            </tbody>
+                          </tbody>
           </table>
         </div>
       </div>
@@ -236,6 +351,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Add New Patient</h2>
             <form onSubmit={handleAddPatient} className="space-y-4">
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
@@ -246,16 +362,20 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
                 <input
                   type="number"
-                  value={newPatient.age}
-                  onChange={(e) => setNewPatient({...newPatient, age: parseInt(e.target.value)})}
+                  value={newPatient.age === 0 ? '' : newPatient.age}
+                  onChange={(e) => setNewPatient({...newPatient, age: parseInt(e.target.value) || 0})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
+                  min="1"
+                  max="120"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                 <select
@@ -268,27 +388,45 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                   <option value="Other">Other</option>
                 </select>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Blood Group</label>
-                <input
-                  type="text"
+                <select
                   value={newPatient.bloodGroup}
-                  onChange={(e) => setNewPatient({...newPatient, bloodGroup: e.target.value})}
+                  onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., A+, B-, O+"
                   required
-                />
+                >
+                  <option value="">Select Blood Group</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                </select>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Contact No</label>
                 <input
-                  type="text"
+                  type="tel"
                   value={newPatient.contactNo}
-                  onChange={(e) => setNewPatient({...newPatient, contactNo: e.target.value})}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 10) {
+                      setNewPatient({ ...newPatient, contactNo: value });
+                    }
+                  }}
+                  maxLength={10}
+                  pattern="\d{10}"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                 <textarea
@@ -299,6 +437,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Health Issue</label>
                 <textarea
@@ -309,6 +448,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                   required
                 />
               </div>
+
               <div className="flex space-x-3 pt-4">
                 <button
                   type="submit"
@@ -324,11 +464,13 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
                   Cancel
                 </button>
               </div>
+
             </form>
           </div>
         </div>
       )}
 
+      {/* Delete Modal */}
       {showDeleteModal && patientToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-sm">
@@ -363,6 +505,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
         </div>
       )}
 
+      {/* Back Button */}
       {onBack && (
         <button
           onClick={onBack}
@@ -372,6 +515,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
           Back
         </button>
       )}
+
     </div>
   );
 };
