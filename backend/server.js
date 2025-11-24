@@ -29,7 +29,7 @@ mongoose
     console.log("⚠️ Check: password, IP whitelist, cluster running state");
   });
 
-// ✅ ✅ ✅ UPDATED Patient Model WITH NEW FIELDS ✅ ✅ ✅
+// ✅ UPDATED PATIENT MODEL WITH NEW FIELDS
 const Patient = mongoose.model(
   "Patient",
   new mongoose.Schema(
@@ -48,7 +48,7 @@ const Patient = mongoose.model(
       sugarLevel: { type: Number, default: null },
       bloodPressure: { type: String, default: null },
 
-      // ✅ UPDATED HEALTH ISSUE STRUCTURE
+      // ✅ UPDATED HEALTH ISSUE FIELDS
       healthIssue: { type: String, required: true },
       healthDescription: { type: String, default: null }
     },
@@ -56,18 +56,18 @@ const Patient = mongoose.model(
   )
 );
 
-// ✅ API Routes
+// ✅ ROUTES (NO /api — matches your frontend)
 
-// Health check
-app.get("/api/health", (req, res) => {
+// ✅ Health Check
+app.get("/health", (req, res) => {
   res.json({
     message: "Hospital Management Backend is running!",
     timestamp: new Date(),
   });
 });
 
-// Get all patients
-app.get("/api/patients", async (req, res) => {
+// ✅ Get All Patients (used by PDF + List)
+app.get("/patients", async (req, res) => {
   try {
     const patients = await Patient.find().sort({ adminNo: 1 });
     res.json(patients);
@@ -76,8 +76,8 @@ app.get("/api/patients", async (req, res) => {
   }
 });
 
-// Get single patient
-app.get("/api/patients/:adminNo", async (req, res) => {
+// ✅ Get Single Patient
+app.get("/patients/:adminNo", async (req, res) => {
   try {
     const patient = await Patient.findOne({ adminNo: req.params.adminNo });
     if (!patient) {
@@ -89,8 +89,8 @@ app.get("/api/patients/:adminNo", async (req, res) => {
   }
 });
 
-// Add new patient
-app.post("/api/patients", async (req, res) => {
+// ✅ Add New Patient (Auto-generate ADM Number)
+app.post("/patients", async (req, res) => {
   try {
     const lastPatient = await Patient.findOne().sort({ adminNo: -1 });
     const lastNumber = lastPatient ? parseInt(lastPatient.adminNo.replace("ADM", "")) : 0;
@@ -108,8 +108,8 @@ app.post("/api/patients", async (req, res) => {
   }
 });
 
-// Update patient ✅ NOW SAVES NEW FIELDS
-app.put("/api/patients/:adminNo", async (req, res) => {
+// ✅ Update Patient (Saves new fields properly)
+app.put("/patients/:adminNo", async (req, res) => {
   try {
     const updatedPatient = await Patient.findOneAndUpdate(
       { adminNo: req.params.adminNo },
@@ -127,8 +127,8 @@ app.put("/api/patients/:adminNo", async (req, res) => {
   }
 });
 
-// Delete patient
-app.delete("/api/patients/:adminNo", async (req, res) => {
+// ✅ Delete Patient
+app.delete("/patients/:adminNo", async (req, res) => {
   try {
     const deleted = await Patient.findOneAndDelete({ adminNo: req.params.adminNo });
 
@@ -145,5 +145,5 @@ app.delete("/api/patients/:adminNo", async (req, res) => {
 // ✅ Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 API available at http://localhost:${PORT}/api`);
+  console.log(`📊 API available at http://localhost:${PORT}`);
 });
