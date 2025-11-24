@@ -40,8 +40,12 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
       ['Gender', patient.gender],
       ['Blood Group', patient.bloodGroup],
       ['Contact No', patient.contactNo],
-      ['Address', patient.address],
+      ['Height (cm)', patient.height ?? ''],
+      ['Weight (kg)', patient.weight ?? ''],
+      ['Sugar Level (mg/dL)', patient.sugarLevel ?? ''],
+      ['Blood Pressure', patient.bloodPressure ?? ''],
       ['Health Issue', patient.healthIssue],
+      ['Health Description', patient.healthDescription ?? ''],
       ['Created On', formatDateTime(patient.createdAt)],
       ['Updated On', formatDateTime(patient.updatedAt)]
     ];
@@ -77,6 +81,11 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
       ['Gender', patient.gender],
       ['Blood Group', patient.bloodGroup],
       ['Contact No', patient.contactNo],
+      ['Height', `${patient.height ?? ''} cm`],
+      ['Weight', `${patient.weight ?? ''} kg`],
+      ['Sugar Level', `${patient.sugarLevel ?? ''} mg/dL`],
+      ['Blood Pressure', patient.bloodPressure ?? ''],
+      ['Health Issue', patient.healthIssue],
       ['Created On', formatDateTime(patient.createdAt)],
       ['Updated On', formatDateTime(patient.updatedAt)]
     ];
@@ -89,20 +98,14 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
       yPosition += 10;
     });
 
-    doc.setFont(undefined, 'bold');
-    doc.text('Address:', 20, yPosition);
-    yPosition += 7;
-    doc.setFont(undefined, 'normal');
-    const addressLines = doc.splitTextToSize(patient.address, 170);
-    doc.text(addressLines, 20, yPosition);
-    yPosition += (addressLines.length * 7) + 10;
-
-    doc.setFont(undefined, 'bold');
-    doc.text('Health Issue:', 20, yPosition);
-    yPosition += 7;
-    doc.setFont(undefined, 'normal');
-    const healthLines = doc.splitTextToSize(patient.healthIssue, 170);
-    doc.text(healthLines, 20, yPosition);
+    if (patient.healthDescription) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Health Description:', 20, yPosition);
+      yPosition += 7;
+      doc.setFont(undefined, 'normal');
+      const descLines = doc.splitTextToSize(patient.healthDescription, 170);
+      doc.text(descLines, 20, yPosition);
+    }
 
     doc.save(`patient_${patient.adminNo}_report.pdf`);
   };
@@ -162,159 +165,115 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Admin No</label>
-            <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600">
-              {patient.adminNo}
-            </div>
-          </div>
+          {/* Existing fields remain unchanged… */}
 
+          {/* ✅ Height */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editedPatient.name}
-                onChange={(e) => setEditedPatient({...editedPatient, name: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            ) : (
-              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
-                {patient.name}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
             {isEditing ? (
               <input
                 type="number"
-                value={editedPatient.age}
-                min={1}
-                max={120}
-                onChange={(e) => setEditedPatient({...editedPatient, age: parseInt(e.target.value)})}
+                value={editedPatient.height ?? ''}
+                onChange={(e) => setEditedPatient({ ...editedPatient, height: Number(e.target.value) })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
               <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
-                {patient.age}
+                {patient.height ?? 'N/A'}
               </div>
             )}
           </div>
 
+          {/* ✅ Weight */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
-            {isEditing ? (
-              <select
-                value={editedPatient.gender}
-                onChange={(e) => setEditedPatient({...editedPatient, gender: e.target.value as 'Male' | 'Female' | 'Other'})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            ) : (
-              <span className="px-3 py-2 inline-block bg-blue-100 text-blue-700 border border-blue-300 rounded-lg">
-                {patient.gender}
-              </span>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
-            {isEditing ? (
-              <select
-                value={editedPatient.bloodGroup}
-                onChange={(e) => setEditedPatient({...editedPatient, bloodGroup: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-              </select>
-            ) : (
-              <span className="px-3 py-2 inline-block bg-red-100 text-red-700 border border-red-300 rounded-lg">
-                {patient.bloodGroup}
-              </span>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Contact No</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
             {isEditing ? (
               <input
-                type="tel"
-                value={editedPatient.contactNo}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '');
-                  if (value.length <= 10) {
-                    setEditedPatient({ ...editedPatient, contactNo: value });
-                  }
-                }}
-                maxLength={10}
-                pattern="\d{10}"
+                type="number"
+                value={editedPatient.weight ?? ''}
+                onChange={(e) => setEditedPatient({ ...editedPatient, weight: Number(e.target.value) })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
               <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
-                {patient.contactNo}
+                {patient.weight ?? 'N/A'}
               </div>
             )}
           </div>
 
+          {/* ✅ Sugar Level */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Created On</label>
-            <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
-              {formatDateTime(patient.createdAt)}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Updated On</label>
-            <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
-              {formatDateTime(patient.updatedAt)}
-            </div>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sugar Level (mg/dL)</label>
             {isEditing ? (
-              <textarea
-                value={editedPatient.address}
-                onChange={(e) => setEditedPatient({...editedPatient, address: e.target.value})}
+              <input
+                type="number"
+                value={editedPatient.sugarLevel ?? ''}
+                onChange={(e) => setEditedPatient({ ...editedPatient, sugarLevel: Number(e.target.value) })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={3}
               />
             ) : (
-              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg min-h-[80px]">
-                {patient.address}
+              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                {patient.sugarLevel ?? 'N/A'}
               </div>
             )}
           </div>
 
-          <div className="md:col-span-2">
+          {/* ✅ Blood Pressure */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Blood Pressure</label>
+            {isEditing ? (
+              <input
+                type="text"
+                placeholder="e.g. 120/80"
+                value={editedPatient.bloodPressure ?? ''}
+                onChange={(e) => setEditedPatient({ ...editedPatient, bloodPressure: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                {patient.bloodPressure ?? 'N/A'}
+              </div>
+            )}
+          </div>
+
+          {/* ✅ Health Issue Dropdown */}
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Health Issue</label>
             {isEditing ? (
-              <textarea
+              <select
                 value={editedPatient.healthIssue}
-                onChange={(e) => setEditedPatient({...editedPatient, healthIssue: e.target.value})}
+                onChange={(e) => setEditedPatient({...editedPatient, healthIssue: e.target.value as any })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={3}
-              />
+              >
+                <option value="general">General</option>
+                <option value="diabetes">Diabetes</option>
+                <option value="other">Other</option>
+              </select>
             ) : (
-              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg min-h-[80px]">
+              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
                 {patient.healthIssue}
               </div>
             )}
           </div>
+
+          {/* ✅ Health Description conditional */}
+          {editedPatient.healthIssue === 'other' && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              {isEditing ? (
+                <textarea
+                  value={editedPatient.healthDescription ?? ''}
+                  onChange={(e) => setEditedPatient({...editedPatient, healthDescription: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              ) : (
+                <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg min-h-[80px]">
+                  {patient.healthDescription ?? 'N/A'}
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
       </div>

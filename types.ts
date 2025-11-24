@@ -17,9 +17,18 @@ export interface Patient {
   bloodGroup: string;
   contactNo: string;
   address: string;
-  healthIssue: string;
 
-  // Added to match backend timestamps from Mongoose
+  // ✅ New health metrics
+  height?: number;            // in cm
+  weight?: number;            // in kg
+  sugarLevel?: number;        // mg/dL
+  bloodPressure?: string;     // e.g., "120/80"
+
+  // ✅ Updated health issue structure
+  healthIssue: 'general' | 'diabetes' | 'other';
+  healthDescription?: string;
+
+  // ✅ Backend timestamps
   createdAt?: string;
   updatedAt?: string;
 }

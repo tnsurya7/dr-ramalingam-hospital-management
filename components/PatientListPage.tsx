@@ -67,7 +67,12 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     bloodGroup: '',
     contactNo: '',
     address: '',
-    healthIssue: ''
+    height: undefined,
+    weight: undefined,
+    sugarLevel: undefined,
+    bloodPressure: '',
+    healthIssue: 'general',
+    healthDescription: ''
   });
 
   // ✅ Smart Search with Date, Age Range, Gender Shortcut, Blood Group Partial
@@ -440,14 +445,70 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Health Issue</label>
-                <textarea
+                <select
                   value={newPatient.healthIssue}
-                  onChange={(e) => setNewPatient({...newPatient, healthIssue: e.target.value})}
+                  onChange={(e) => setNewPatient({ ...newPatient, healthIssue: e.target.value as 'general' | 'diabetes' | 'other' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={2}
                   required
+                >
+                  <option value="general">General</option>
+                  <option value="diabetes">Diabetes</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                <input
+                  type="number"
+                  value={newPatient.height ?? ''}
+                  onChange={(e) => setNewPatient({ ...newPatient, height: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                <input
+                  type="number"
+                  value={newPatient.weight ?? ''}
+                  onChange={(e) => setNewPatient({ ...newPatient, weight: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sugar Level (mg/dL)</label>
+                <input
+                  type="number"
+                  value={newPatient.sugarLevel ?? ''}
+                  onChange={(e) => setNewPatient({ ...newPatient, sugarLevel: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Blood Pressure</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 120/80"
+                  value={newPatient.bloodPressure ?? ''}
+                  onChange={(e) => setNewPatient({ ...newPatient, bloodPressure: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {newPatient.healthIssue === 'other' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Health Description</label>
+                  <textarea
+                    value={newPatient.healthDescription ?? ''}
+                    onChange={(e) => setNewPatient({ ...newPatient, healthDescription: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={2}
+                  />
+                </div>
+              )}
 
               <div className="flex space-x-3 pt-4">
                 <button
