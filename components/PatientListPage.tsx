@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Plus, Download, FileText, ArrowLeft, Trash2 } from 'lucide-react';
 import { Patient } from '../types';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // ✅ Helper functions for Smart Search
 const parseDate = (value: string) => {
@@ -75,7 +76,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     healthDescription: ''
   });
 
-  // ✅ Smart Search with Date, Age Range, Gender Shortcut, Blood Group Partial
+  // ✅ FILTERED PATIENT RESULTS
   const filteredPatients = patients.filter((patient) => {
     if (!searchTerm.trim()) return true;
 
@@ -139,33 +140,44 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     });
   });
 
-  const handleAddPatient = (e: React.FormEvent) => {
-    e.preventDefault();
-    onAddPatient(newPatient);
-    setNewPatient({
-      name: '',
-      age: 0,
-      gender: 'Male',
-      bloodGroup: '',
-      contactNo: '',
-      address: '',
-      healthIssue: ''
-    });
-    setShowAddForm(false);
-  };
-
+  // ✅ CSV EXPORT (unchanged)
   const downloadCSV = () => {
-    const headers = ['Admin No', 'Name', 'Age', 'Gender', 'Blood Group', 'Contact No', 'Date & Time'];
+    const headers = [
+      "Admin No",
+      "Name",
+      "Gender",
+      "Age",
+      "Blood Group",
+      "Contact",
+      "Created At",
+      "Updated At",
+      "Height",
+      "Weight",
+      "Sugar Level",
+      "Blood Pressure",
+      "Health Issue",
+      "Health Description",
+      "Address"
+    ];
+
     const csvContent = [
       headers.join(','),
-      ...patients.map(p => [
+      ...filteredPatients.map(p => [
         p.adminNo,
         p.name,
-        p.age,
         p.gender,
+        p.age,
         p.bloodGroup,
         p.contactNo,
-        p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A'
+        p.createdAt ? new Date(p.createdAt).toLocaleString() : 'N/A',
+        p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'N/A',
+        p.height ?? 'N/A',
+        p.weight ?? 'N/A',
+        p.sugarLevel ?? 'N/A',
+        p.bloodPressure ?? 'N/A',
+        p.healthIssue,
+        p.healthDescription ?? 'N/A',
+        p.address
       ].join(','))
     ].join('\n');
     
@@ -177,55 +189,69 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     a.click();
   };
 
+  // ✅ FIXED FULL DETAILS PDF EXPORT
   const downloadPDF = async () => {
-  // ✅ Always fetch fresh list before generating PDF
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/patients`);
-  const latestPatients: Patient[] = await response.json();
-
   const doc = new jsPDF();
 
+  // ✅ Title
   doc.setFontSize(18);
-  doc.text('PATIENT LIST REPORT', 105, 15, { align: 'center' });
+  doc.text("PATIENT LIST REPORT", 105, 15, { align: "center" });
 
+  // ✅ Generated timestamp
   doc.setFontSize(10);
-  doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 22, { align: 'center' });
+  doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 22, { align: "center" });
 
-  let yPosition = 35;
+  // ✅ Table headers
+  const tableColumn = [
+    "Admin No",
+    "Name",
+    "Gender",
+    "Age",
+    "Blood Group",
+    "Contact No",
+    "Height",
+    "Weight",
+    "Sugar",
+    "BP",
+    "Health Issue",
+    "Health Desc",
+    "Created At"
+  ];
 
-  latestPatients.forEach((patient, index) => {
-    if (yPosition > 270) {
-      doc.addPage();
-      yPosition = 20;
-    }
+  // ✅ Table rows formatted cleanly
+  const tableRows = patients.map((p) => [
+    p.adminNo,
+    p.name,
+    p.gender,
+    p.age,
+    p.bloodGroup,
+    p.contactNo,
+    p.height ?? "N/A",
+    p.weight ?? "N/A",
+    p.sugarLevel ?? "N/A",
+    p.bloodPressure ?? "N/A",
+    p.healthIssue,
+    p.healthDescription ?? "N/A",
+    p.createdAt ? new Date(p.createdAt).toLocaleString() : "N/A",
+  ]);
 
-    doc.setFontSize(12);
-    doc.setFont(undefined, 'bold');
-    doc.text(`${index + 1}. ${patient.name} (${patient.adminNo})`, 15, yPosition);
-
-    doc.setFont(undefined, 'normal');
-    doc.setFontSize(10);
-    yPosition += 7;
-
-    doc.text(`Age: ${patient.age}  |  Gender: ${patient.gender}  |  Blood Group: ${patient.bloodGroup}`, 20, yPosition);
-    yPosition += 6;
-
-    doc.text(`Contact: ${patient.contactNo}`, 20, yPosition);
-    yPosition += 6;
-
-    doc.text(`Date & Time: ${patient.createdAt ? new Date(patient.createdAt).toLocaleString() : 'N/A'}`, 20, yPosition);
-    yPosition += 6;
-
-    doc.text(`Address: ${patient.address}`, 20, yPosition);
-    yPosition += 6;
-
-    doc.text(`Health Issue: ${patient.healthIssue}`, 20, yPosition);
-    yPosition += 10;
+  // ✅ AutoTable for clean formatting
+  autoTable(doc, {
+    startY: 30,
+    head: [tableColumn],
+    body: tableRows,
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [200, 0, 0] },
+    theme: "grid",
   });
 
+  // ✅ Final summary
+  const finalY = (doc as any).lastAutoTable.finalY + 10;
   doc.setFontSize(10);
-  doc.text(`Total Patients: ${latestPatients.length}`, 15, yPosition);
+  doc.text(`Total Patients: ${patients.length}`, 15, finalY);
 
-  doc.save('patients_report.pdf');
+  // ✅ Save file
+  doc.save("patients_report.pdf");
 };
   return (
     <div className="min-h-screen bg-gray-50 p-6">

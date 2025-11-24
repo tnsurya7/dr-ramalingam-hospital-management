@@ -10,27 +10,31 @@ export interface Doctor {
 
 // Patient type fully synced with MongoDB backend schema
 export interface Patient {
-  adminNo: string;       // Auto-generated (ADM001, ADM002...)
+  adminNo: string;
+
   name: string;
   age: number;
-  gender: string;        // Backend allows any string
-  bloodGroup: string;
+  gender: 'Male' | 'Female' | 'Other';
+
+  bloodGroup: 
+    'A+' | 'A-' | 
+    'B+' | 'B-' | 
+    'O+' | 'O-' | 
+    'AB+' | 'AB-';
+
   contactNo: string;
   address: string;
 
-  // ✅ New health metrics
-  height?: number;            // in cm
-  weight?: number;            // in kg
-  sugarLevel?: number;        // mg/dL
-  bloodPressure?: string;     // e.g., "120/80"
+  height?: number;        // cm
+  weight?: number;        // kg
+  sugarLevel?: number;    // mg/dL
+  bloodPressure?: string; // "120/80"
 
-  // ✅ Updated health issue structure
   healthIssue: 'general' | 'diabetes' | 'other';
   healthDescription?: string;
 
-  // ✅ Backend timestamps
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Page navigation enum (used by App.tsx)
