@@ -76,6 +76,30 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     healthDescription: ''
   });
 
+  // ✅ Add Patient Handler (fixes blank page)
+  const handleAddPatient = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    onAddPatient(newPatient);
+
+    setNewPatient({
+      name: '',
+      age: 0,
+      gender: 'Male',
+      bloodGroup: '',
+      contactNo: '',
+      address: '',
+      height: undefined,
+      weight: undefined,
+      sugarLevel: undefined,
+      bloodPressure: '',
+      healthIssue: 'general',
+      healthDescription: ''
+    });
+
+    setShowAddForm(false);
+  };
+
   // ✅ FILTERED PATIENT RESULTS
   const filteredPatients = patients.filter((patient) => {
     if (!searchTerm.trim()) return true;
@@ -382,7 +406,7 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
       {/* Add Patient Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Add New Patient</h2>
             <form onSubmit={handleAddPatient} className="space-y-4">
 
