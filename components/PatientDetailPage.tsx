@@ -40,9 +40,10 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
       ['Gender', patient.gender],
       ['Blood Group', patient.bloodGroup],
       ['Contact No', patient.contactNo],
-      ['Height (cm)', patient.height ?? ''],
-      ['Weight (kg)', patient.weight ?? ''],
-      ['Sugar Level (mg/dL)', patient.sugarLevel ?? ''],
+      ['Address', patient.address],
+      ['Height (cm)', patient.height !== undefined ? String(patient.height) : ''],
+      ['Weight (kg)', patient.weight !== undefined ? String(patient.weight) : ''],
+      ['Sugar Level (mg/dL)', patient.sugarLevel !== undefined ? String(patient.sugarLevel) : ''],
       ['Blood Pressure', patient.bloodPressure ?? ''],
       ['Health Issue', patient.healthIssue],
       ['Health Description', patient.healthDescription ?? ''],
@@ -74,16 +75,16 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
     
     let yPosition = 45;
 
-    const details = [
+    const details: [string, string][] = [
       ['Admin No', patient.adminNo],
       ['Name', patient.name],
       ['Age', patient.age.toString()],
       ['Gender', patient.gender],
       ['Blood Group', patient.bloodGroup],
       ['Contact No', patient.contactNo],
-      ['Height', `${patient.height ?? ''} cm`],
-      ['Weight', `${patient.weight ?? ''} kg`],
-      ['Sugar Level', `${patient.sugarLevel ?? ''} mg/dL`],
+      ['Height', patient.height !== undefined ? `${patient.height} cm` : ''],
+      ['Weight', patient.weight !== undefined ? `${patient.weight} kg` : ''],
+      ['Sugar Level', patient.sugarLevel !== undefined ? `${patient.sugarLevel} mg/dL` : ''],
       ['Blood Pressure', patient.bloodPressure ?? ''],
       ['Health Issue', patient.healthIssue],
       ['Created On', formatDateTime(patient.createdAt)],
@@ -94,10 +95,20 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
       doc.setFont(undefined, 'bold');
       doc.text(`${label}:`, 20, yPosition);
       doc.setFont(undefined, 'normal');
-      doc.text(value, 70, yPosition);
+      doc.text(value || 'N/A', 70, yPosition);
       yPosition += 10;
     });
 
+    // Address section
+    doc.setFont(undefined, 'bold');
+    doc.text('Address:', 20, yPosition);
+    yPosition += 7;
+    doc.setFont(undefined, 'normal');
+    const addressLines = doc.splitTextToSize(patient.address || 'N/A', 170);
+    doc.text(addressLines, 20, yPosition);
+    yPosition += (addressLines.length * 7) + 10;
+
+    // Health Description (for "other")
     if (patient.healthDescription) {
       doc.setFont(undefined, 'bold');
       doc.text('Health Description:', 20, yPosition);
@@ -110,9 +121,17 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
     doc.save(`patient_${patient.adminNo}_report.pdf`);
   };
 
+  // Helper to know when to show description block
+  const shouldShowDescription = () => {
+    if (isEditing) {
+      return editedPatient.healthIssue === 'other';
+    }
+    return patient.healthIssue === 'other' || !!patient.healthDescription;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-
+      {/* Top Action Buttons */}
       <div className="flex justify-end items-center mb-6">
         <div className="flex space-x-3">
           {!isEditing ? (
@@ -160,65 +179,192 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
         </div>
       </div>
 
+      {/* Card */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Patient Details</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Admin No */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Admin No</label>
+            <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600">
+              {patient.adminNo}
+            </div>
+          </div>
 
-          {/* Existing fields remain unchanged… */}
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedPatient.name}
+                onChange={(e) => setEditedPatient({...editedPatient, name: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                {patient.name}
+              </div>
+            )}
+          </div>
 
-          {/* ✅ Height */}
+          {/* Age */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
+            {isEditing ? (
+              <input
+                type="number"
+                value={editedPatient.age}
+                min={1}
+                max={120}
+                onChange={(e) => setEditedPatient({...editedPatient, age: parseInt(e.target.value) || 0})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                {patient.age}
+              </div>
+            )}
+          </div>
+
+          {/* Gender */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+            {isEditing ? (
+              <select
+                value={editedPatient.gender}
+                onChange={(e) => setEditedPatient({...editedPatient, gender: e.target.value as 'Male' | 'Female' | 'Other'})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            ) : (
+              <span className="px-3 py-2 inline-block bg-blue-100 text-blue-700 border border-blue-300 rounded-lg">
+                {patient.gender}
+              </span>
+            )}
+          </div>
+
+          {/* Blood Group */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
+            {isEditing ? (
+              <select
+                value={editedPatient.bloodGroup}
+                onChange={(e) => setEditedPatient({...editedPatient, bloodGroup: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Blood Group</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+              </select>
+            ) : (
+              <span className="px-3 py-2 inline-block bg-red-100 text-red-700 border border-red-300 rounded-lg">
+                {patient.bloodGroup}
+              </span>
+            )}
+          </div>
+
+          {/* Contact No */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Contact No</label>
+            {isEditing ? (
+              <input
+                type="tel"
+                value={editedPatient.contactNo}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  if (value.length <= 10) {
+                    setEditedPatient({ ...editedPatient, contactNo: value });
+                  }
+                }}
+                maxLength={10}
+                pattern="\d{10}"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                {patient.contactNo}
+              </div>
+            )}
+          </div>
+
+          {/* Height */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
             {isEditing ? (
               <input
                 type="number"
                 value={editedPatient.height ?? ''}
-                onChange={(e) => setEditedPatient({ ...editedPatient, height: Number(e.target.value) })}
+                onChange={(e) =>
+                  setEditedPatient({
+                    ...editedPatient,
+                    height: e.target.value === '' ? undefined : Number(e.target.value),
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
               <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
-                {patient.height ?? 'N/A'}
+                {patient.height !== undefined ? `${patient.height} cm` : 'N/A'}
               </div>
             )}
           </div>
 
-          {/* ✅ Weight */}
+          {/* Weight */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Weight (kg)</label>
             {isEditing ? (
               <input
                 type="number"
                 value={editedPatient.weight ?? ''}
-                onChange={(e) => setEditedPatient({ ...editedPatient, weight: Number(e.target.value) })}
+                onChange={(e) =>
+                  setEditedPatient({
+                    ...editedPatient,
+                    weight: e.target.value === '' ? undefined : Number(e.target.value),
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
               <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
-                {patient.weight ?? 'N/A'}
+                {patient.weight !== undefined ? `${patient.weight} kg` : 'N/A'}
               </div>
             )}
           </div>
 
-          {/* ✅ Sugar Level */}
+          {/* Sugar Level */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Sugar Level (mg/dL)</label>
             {isEditing ? (
               <input
                 type="number"
                 value={editedPatient.sugarLevel ?? ''}
-                onChange={(e) => setEditedPatient({ ...editedPatient, sugarLevel: Number(e.target.value) })}
+                onChange={(e) =>
+                  setEditedPatient({
+                    ...editedPatient,
+                    sugarLevel: e.target.value === '' ? undefined : Number(e.target.value),
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
               <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
-                {patient.sugarLevel ?? 'N/A'}
+                {patient.sugarLevel !== undefined ? `${patient.sugarLevel} mg/dL` : 'N/A'}
               </div>
             )}
           </div>
 
-          {/* ✅ Blood Pressure */}
+          {/* Blood Pressure */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Blood Pressure</label>
             {isEditing ? (
@@ -236,13 +382,51 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
             )}
           </div>
 
-          {/* ✅ Health Issue Dropdown */}
+          {/* Created On */}
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Created On</label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+              {formatDateTime(patient.createdAt)}
+            </div>
+          </div>
+
+          {/* Updated On */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Updated On</label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+              {formatDateTime(patient.updatedAt)}
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+            {isEditing ? (
+              <textarea
+                value={editedPatient.address}
+                onChange={(e) => setEditedPatient({...editedPatient, address: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+              />
+            ) : (
+              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg min-h-[80px]">
+                {patient.address}
+              </div>
+            )}
+          </div>
+
+          {/* Health Issue (Dropdown) */}
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">Health Issue</label>
             {isEditing ? (
               <select
                 value={editedPatient.healthIssue}
-                onChange={(e) => setEditedPatient({...editedPatient, healthIssue: e.target.value as any })}
+                onChange={(e) =>
+                  setEditedPatient({
+                    ...editedPatient,
+                    healthIssue: e.target.value as 'general' | 'diabetes' | 'other',
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="general">General</option>
@@ -256,14 +440,19 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
             )}
           </div>
 
-          {/* ✅ Health Description conditional */}
-          {editedPatient.healthIssue === 'other' && (
+          {/* Description (Only when Health Issue is "other") */}
+          {shouldShowDescription() && (
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               {isEditing ? (
                 <textarea
                   value={editedPatient.healthDescription ?? ''}
-                  onChange={(e) => setEditedPatient({...editedPatient, healthDescription: e.target.value})}
+                  onChange={(e) =>
+                    setEditedPatient({
+                      ...editedPatient,
+                      healthDescription: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                 />
@@ -274,10 +463,10 @@ const PatientDetailPage: React.FC<PatientDetailPageProps> = ({
               )}
             </div>
           )}
-
         </div>
       </div>
 
+      {/* Back Button */}
       <button
         onClick={onBack}
         className="fixed bottom-6 left-6 flex items-center text-gray-600 hover:text-gray-800 transition-colors bg-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg"
