@@ -29,7 +29,7 @@ mongoose
     console.log("⚠️ Check: password, IP whitelist, cluster running state");
   });
 
-// ✅ Patient Model
+// ✅ ✅ ✅ UPDATED Patient Model WITH NEW FIELDS ✅ ✅ ✅
 const Patient = mongoose.model(
   "Patient",
   new mongoose.Schema(
@@ -41,7 +41,16 @@ const Patient = mongoose.model(
       bloodGroup: String,
       contactNo: String,
       address: String,
-      healthIssue: String
+
+      // ✅ NEW HEALTH METRICS
+      height: { type: Number, default: null },
+      weight: { type: Number, default: null },
+      sugarLevel: { type: Number, default: null },
+      bloodPressure: { type: String, default: null },
+
+      // ✅ UPDATED HEALTH ISSUE STRUCTURE
+      healthIssue: { type: String, required: true },
+      healthDescription: { type: String, default: null }
     },
     { timestamps: true }
   )
@@ -99,12 +108,12 @@ app.post("/api/patients", async (req, res) => {
   }
 });
 
-// Update patient
+// Update patient ✅ NOW SAVES NEW FIELDS
 app.put("/api/patients/:adminNo", async (req, res) => {
   try {
     const updatedPatient = await Patient.findOneAndUpdate(
       { adminNo: req.params.adminNo },
-      { ...req.body },
+      req.body,
       { new: true }
     );
 
