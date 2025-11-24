@@ -1,10 +1,12 @@
 import { Patient } from '../types';
 
-// ✅ Uses environment variable (works for Vercel + Render + Local)
-const API_BASE_URL = import.meta.env.VITE_API_BASE;
+// ✅ Uses environment variable with fallback (Vercel + Render + Local)
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE ||
+  "https://hospital-management-lmz4.onrender.com";
 
 export const patientAPI = {
-  // Get all patients
+  // ✅ Get all patients
   getAllPatients: async (): Promise<Patient[]> => {
     const response = await fetch(`${API_BASE_URL}/patients`);
     if (!response.ok) {
@@ -13,7 +15,7 @@ export const patientAPI = {
     return response.json();
   },
 
-  // Get single patient
+  // ✅ Get single patient
   getPatient: async (adminNo: string): Promise<Patient> => {
     const response = await fetch(`${API_BASE_URL}/patients/${adminNo}`);
     if (!response.ok) {
@@ -22,7 +24,7 @@ export const patientAPI = {
     return response.json();
   },
 
-  // Add new patient
+  // ✅ Add new patient
   addPatient: async (patient: Omit<Patient, 'adminNo'>): Promise<Patient> => {
     const response = await fetch(`${API_BASE_URL}/patients`, {
       method: 'POST',
@@ -35,7 +37,7 @@ export const patientAPI = {
     return response.json();
   },
 
-  // Update patient
+  // ✅ Update patient
   updatePatient: async (adminNo: string, patient: Patient): Promise<Patient> => {
     const response = await fetch(`${API_BASE_URL}/patients/${adminNo}`, {
       method: 'PUT',
@@ -48,7 +50,7 @@ export const patientAPI = {
     return response.json();
   },
 
-  // Delete patient
+  // ✅ Delete patient
   deletePatient: async (adminNo: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/patients/${adminNo}`, {
       method: 'DELETE',
@@ -58,7 +60,7 @@ export const patientAPI = {
     }
   },
 
-  // Health check
+  // ✅ Backend health check
   healthCheck: async (): Promise<any> => {
     const response = await fetch(`${API_BASE_URL}/health`);
     if (!response.ok) {
