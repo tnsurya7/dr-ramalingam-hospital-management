@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 // ✅ Create Express app
 const app = express();
 
-// ✅ Use Render assigned port OR fallback
+// ✅ Use environment PORT or fallback
 const PORT = process.env.PORT || 5001;
 
 // ✅ Middleware
@@ -29,7 +29,7 @@ mongoose
     console.log("⚠️ Check: password, IP whitelist, cluster running state");
   });
 
-// ✅ UPDATED PATIENT MODEL WITH NEW FIELDS
+// ✅ Patient Model with new fields
 const Patient = mongoose.model(
   "Patient",
   new mongoose.Schema(
@@ -42,13 +42,11 @@ const Patient = mongoose.model(
       contactNo: String,
       address: String,
 
-      // ✅ NEW HEALTH METRICS
       height: { type: Number, default: null },
       weight: { type: Number, default: null },
       sugarLevel: { type: Number, default: null },
       bloodPressure: { type: String, default: null },
 
-      // ✅ UPDATED HEALTH ISSUE FIELDS
       healthIssue: { type: String, required: true },
       healthDescription: { type: String, default: null }
     },
@@ -56,9 +54,7 @@ const Patient = mongoose.model(
   )
 );
 
-// ✅ ROUTES (NO /api — matches your frontend)
-
-// ✅ Health Check
+// ✅ Routes (ensure paths match frontend fetch)
 app.get("/health", (req, res) => {
   res.json({
     message: "Hospital Management Backend is running!",
@@ -66,7 +62,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// ✅ Get All Patients (used by PDF + List)
 app.get("/patients", async (req, res) => {
   try {
     const patients = await Patient.find().sort({ adminNo: 1 });
@@ -76,7 +71,6 @@ app.get("/patients", async (req, res) => {
   }
 });
 
-// ✅ Get Single Patient
 app.get("/patients/:adminNo", async (req, res) => {
   try {
     const patient = await Patient.findOne({ adminNo: req.params.adminNo });
@@ -89,7 +83,6 @@ app.get("/patients/:adminNo", async (req, res) => {
   }
 });
 
-// ✅ Add New Patient (Auto-generate ADM Number)
 app.post("/patients", async (req, res) => {
   try {
     const lastPatient = await Patient.findOne().sort({ adminNo: -1 });
@@ -108,7 +101,6 @@ app.post("/patients", async (req, res) => {
   }
 });
 
-// ✅ Update Patient (Saves new fields properly)
 app.put("/patients/:adminNo", async (req, res) => {
   try {
     const updatedPatient = await Patient.findOneAndUpdate(
@@ -127,7 +119,6 @@ app.put("/patients/:adminNo", async (req, res) => {
   }
 });
 
-// ✅ Delete Patient
 app.delete("/patients/:adminNo", async (req, res) => {
   try {
     const deleted = await Patient.findOneAndDelete({ adminNo: req.params.adminNo });

@@ -177,53 +177,56 @@ const PatientListPage: React.FC<PatientListPageProps> = ({
     a.click();
   };
 
-  const downloadPDF = () => {
-    const doc = new jsPDF();
-    
-    doc.setFontSize(18);
-    doc.text('PATIENT LIST REPORT', 105, 15, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 22, { align: 'center' });
-    
-    let yPosition = 35;
-    
-    patients.forEach((patient, index) => {
-      if (yPosition > 270) {
-        doc.addPage();
-        yPosition = 20;
-      }
-      
-      doc.setFontSize(12);
-      doc.setFont(undefined, 'bold');
-      doc.text(`${index + 1}. ${patient.name} (${patient.adminNo})`, 15, yPosition);
-      
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(10);
-      yPosition += 7;
-      
-      doc.text(`Age: ${patient.age}  |  Gender: ${patient.gender}  |  Blood Group: ${patient.bloodGroup}`, 20, yPosition);
-      yPosition += 6;
-      
-      doc.text(`Contact: ${patient.contactNo}`, 20, yPosition);
-      yPosition += 6;
+  const downloadPDF = async () => {
+  // ✅ Always fetch fresh list before generating PDF
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/patients`);
+  const latestPatients: Patient[] = await response.json();
 
-      doc.text(`Date & Time: ${patient.createdAt ? new Date(patient.createdAt).toLocaleString() : 'N/A'}`, 20, yPosition);
-      yPosition += 6;
-      
-      doc.text(`Address: ${patient.address}`, 20, yPosition);
-      yPosition += 6;
-      
-      doc.text(`Health Issue: ${patient.healthIssue}`, 20, yPosition);
-      yPosition += 10;
-    });
-    
-    doc.setFontSize(10);
-    doc.text(`Total Patients: ${patients.length}`, 15, yPosition);
-    
-    doc.save('patients_report.pdf');
-  };
+  const doc = new jsPDF();
 
+  doc.setFontSize(18);
+  doc.text('PATIENT LIST REPORT', 105, 15, { align: 'center' });
+
+  doc.setFontSize(10);
+  doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 22, { align: 'center' });
+
+  let yPosition = 35;
+
+  latestPatients.forEach((patient, index) => {
+    if (yPosition > 270) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text(`${index + 1}. ${patient.name} (${patient.adminNo})`, 15, yPosition);
+
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    yPosition += 7;
+
+    doc.text(`Age: ${patient.age}  |  Gender: ${patient.gender}  |  Blood Group: ${patient.bloodGroup}`, 20, yPosition);
+    yPosition += 6;
+
+    doc.text(`Contact: ${patient.contactNo}`, 20, yPosition);
+    yPosition += 6;
+
+    doc.text(`Date & Time: ${patient.createdAt ? new Date(patient.createdAt).toLocaleString() : 'N/A'}`, 20, yPosition);
+    yPosition += 6;
+
+    doc.text(`Address: ${patient.address}`, 20, yPosition);
+    yPosition += 6;
+
+    doc.text(`Health Issue: ${patient.healthIssue}`, 20, yPosition);
+    yPosition += 10;
+  });
+
+  doc.setFontSize(10);
+  doc.text(`Total Patients: ${latestPatients.length}`, 15, yPosition);
+
+  doc.save('patients_report.pdf');
+};
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
